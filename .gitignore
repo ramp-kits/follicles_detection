@@ -9,6 +9,7 @@ retinanet
 val
 *.csv
 *_TFRecord
+magick-*
 
 # MODELS
 models
