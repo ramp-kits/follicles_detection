@@ -57,18 +57,20 @@ def xml_to_csv(path):
 
 @click.command()
 @click.argument("xml_folder", type=click.Path(exists=True, file_okay=False))
-def main(xml_folder):
+@click.argument("csv_path", type=click.Path(dir_okay=False))
+def main(xml_folder, csv_path):
     """Convert xml files in folder XML_FOLDER to a single labels.csv"""
     parent_folder = os.path.dirname(xml_folder)
-    output_filename = os.path.join(parent_folder, "labels.csv")
+    assert csv_path.endswith(".csv")
+    # output_filename = os.path.join(parent_folder, "labels.csv")
 
     # image_path = os.path.join(os.getcwd(), folder)
     print(f"Reading xml files in {parent_folder}")
 
     xml_df = xml_to_csv(xml_folder)
-    xml_df.to_csv(output_filename, index=None)
+    xml_df.to_csv(csv_path, index=None)
 
-    print(f"Successfully converted xml to csv: {output_filename}")
+    print(f"Successfully converted xml to csv: {csv_path}")
 
 
 if __name__ == "__main__":
