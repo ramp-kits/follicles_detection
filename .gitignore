@@ -1,5 +1,6 @@
 # DATA FILES
 data*
+hidden_data*
 data_retina
 images
 train
