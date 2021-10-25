@@ -46,7 +46,9 @@ hidden_images_folder = os.path.join(HIDDEN_DATA_FOLDER, "coupes_jpg")
 def load_all_labels():
     all_labels = pd.read_csv(labels_path)
     try:
-        all_labels = all_labels.append(pd.read_csv(hidden_labels_path))
+        all_labels = all_labels.append(
+            pd.read_csv(hidden_labels_path)
+        ).drop_duplicates()
     except FileNotFoundError:
         pass
     return all_labels
