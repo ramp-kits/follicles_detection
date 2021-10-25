@@ -121,3 +121,32 @@ Folders `data`, `hidden_data` and `models` are not committed
     ```
     % python preprocessing_scripts/reserve_hidden_data.py
     ```
+
+### Building a train dataset for a classification model
+
+See notebook[`crop_images.ipynb`](crop_images.ipynb). This notebook takes
+as input the image files in `data/images_jpg/` and the annotated
+bounding boxes (`data/labels.csv`) to generate image thumbnails
+organized as follows:
+
+```
+./data/split
+├── test
+│   ├── 0_Negative
+│   ├── 1_Primordial
+│   ├── 2_Primary
+│   ├── 3_Secondary
+│   └── 4_Tertiary
+├── train
+│   ├── 0_Negative
+│   ├── 1_Primordial
+│   ├── 2_Primary
+│   ├── 3_Secondary
+│   └── 4_Tertiary
+└── val
+    ├── 0_Negative
+    ├── 1_Primordial
+    ├── 2_Primary
+    ├── 3_Secondary
+    └── 4_Tertiary
+```

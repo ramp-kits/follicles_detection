@@ -3,6 +3,7 @@ numpy
 jupyter
 pandas
 click
+Pillow
 
 tensorflow==2.6.0
 sklearn
