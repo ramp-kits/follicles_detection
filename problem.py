@@ -63,13 +63,14 @@ class CustomPredictions(DetectionPredictions):
         #     index_list = range(len(predictions_list))
         # y_comb_list = np.array([predictions_list[i].y_pred for i in index_list])
         # combined_predictions = cls(y_pred=y_comb_list)
-        print("Combine!")
-        print(
-            f"Calling combine with a list of {len(predictions_list)} Predictions object"
-        )
-        print("index is none : ", index_list is None)
-        for p in predictions_list:
-            print(f"     - len(y) :  {len(p.y_pred)}")
+        if False:
+            print("Combine!")
+            print(
+                f"Calling combine with a list of {len(predictions_list)} Predictions object"
+            )
+            print("index is none : ", index_list is None)
+            for p in predictions_list:
+                print(f"     - len(y) :  {len(p.y_pred)}")
 
         return predictions_list[0]
 
@@ -108,15 +109,15 @@ def format_labels_to_problem_data(df):
 
         locations_in_image = [
             {
-                "label": row["label"],
+                "label": row["class"],
                 "bbox": (row["xmin"], row["ymin"], row["xmax"], row["ymax"]),
             }
             for _, row in group.iterrows()
         ]
         locations.append(locations_in_image)
 
-    X = np.array(filepaths)
-    y = np.array(locations)
+    X = np.array(filepaths, dtype=object)
+    y = np.array(locations, dtype=object)
     assert len(X) == len(y)
     return X, y
 

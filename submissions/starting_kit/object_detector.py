@@ -1,4 +1,5 @@
 import numpy as np
+import random
 
 
 class ObjectDetector:
@@ -13,11 +14,57 @@ class ObjectDetector:
         for image_path in X:
             # image = load_image(image_path)
             # etc.
-            x, y, width = 10, 50, 200
             predictions_for_this_image = [
-                {"label": "Secondary", "bbox": (x, y, x + 2 * width, y + 2 * width)},
-                {"label": "Primary", "bbox": (x, y, x + width, y + width)},
-                {"label": "Primordial", "bbox": (x, y, x + width, y + width)},
+                {
+                    "proba": random.random(),
+                    "label": "Primordial",
+                    "bbox": (1084, 5189, 1218, 5423),
+                },
+                {
+                    "proba": random.random(),
+                    "label": "Primordial",
+                    "bbox": (2564, 3543, 2676, 3754),
+                },
+                {
+                    "proba": random.random(),
+                    "label": "Primordial",
+                    "bbox": (3224, 8979, 3417, 9092),
+                },
+                {
+                    "proba": random.random(),
+                    "label": "Primordial",
+                    "bbox": (7541, 353, 7765, 505),
+                },
+                {
+                    "proba": random.random(),
+                    "label": "Primordial",
+                    "bbox": (7792, 10523, 7971, 10601),
+                },
+                {
+                    "proba": random.random(),
+                    "label": "Primordial",
+                    "bbox": (11807, 378, 11951, 483),
+                },
+                {
+                    "proba": random.random(),
+                    "label": "Secondary",
+                    "bbox": (9569, 503, 10830, 1850),
+                },
+                {
+                    "proba": random.random(),
+                    "label": "Tertiary",
+                    "bbox": (2943, 1791, 4973, 3683),
+                },
+                {
+                    "proba": random.random(),
+                    "label": "Tertiary",
+                    "bbox": (7388, 8841, 9232, 10492),
+                },
+                {
+                    "proba": random.random(),
+                    "label": "Tertiary",
+                    "bbox": (13188, 526, 15346, 2573),
+                },
             ]
             predicted_locations.append(predictions_for_this_image)
 
