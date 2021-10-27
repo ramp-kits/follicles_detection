@@ -80,9 +80,4 @@ class ObjectDetector:
             img = Image.open(os.path.join(DATA_FOLDER, "coupes_jpg", img_name))
             pred_list = self.predict_locations_for_windows(self, img)
         all_predictions.append(pred_list)
-
-           # mettre en forme all_predictions:
-            # un numpy array N rows, 1 column
-            # chaque element = une liste qui correspondent aux prédictions pour CETTE image
-            # une prédiction = {bbox, label, proba}
-          return all_predictions
+        return all_predictions
