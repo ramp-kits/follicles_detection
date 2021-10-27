@@ -101,10 +101,11 @@ def format_labels_to_problem_data(df):
         columns: filename, label
                   xmin, ymin, xmax, ymax
     """
+    repo_path = os.path.abspath(os.path.dirname(__file__))
     filepaths = []
     locations = []
     for filename, group in df.groupby("filename"):
-        filepath = os.path.join("data", "images_jpg", filename)
+        filepath = os.path.join(repo_path, "data", "coupes_jpg", filename)
         filepaths.append(filepath)
 
         locations_in_image = [
