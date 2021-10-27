@@ -1,36 +1,47 @@
 import os
 import numpy as np
-from PIL import Image
 import tensorflow as tf
 
-this_folder = os.path.abspath("")
-DATA_FOLDER = os.path.join(this_folder, "data")
-MODELS_FOLDER = os.path.join(this_folder, "models")
-MODEL_NAME_FOR_PREDICTION = "classifier2"
+
+import sys
+
+repo_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+sys.path.append(repo_folder)
+from ramp_custom.utils import load_image
+
+# IMAGES_FOLDER = os.path.join(repo_folder, "data", "coupes_jpg")
+MODELS_FOLDER = os.path.join(repo_folder, "models")
+MODEL_NAME_FOR_PREDICTION = "classifier"
 
 
 class ObjectDetector:
     def __init__(self):
-        pass
-
-    def fit(self, X, y):
-        # ignore inputs
-        # load trained model from file
         self._model = tf.keras.models.load_model(
             os.path.join(MODELS_FOLDER, MODEL_NAME_FOR_PREDICTION)
         )
+
+    def fit(self, X, y):
+        # ignore inputs for now
         return self
 
     def predict(self, X):
+        print("Running predictions ...")
         # X = numpy array N rows, 1 column, type object
         # each row = one file name for an image
         all_predictions = []
-        for img_name in X:
-            img = Image.open(os.path.join(DATA_FOLDER, "coupes_jpg", img_name))
-            pred_list = self.predict_locations_for_windows(img, self._model)
-            all_predictions.append(pred_list)
+        for i, image_path in enumerate(X):
+            # TEMP: only make prediction for first image
+            if i == 0:
+                print(f"   prediction for image {image_path}")
+                img = load_image(image_path)
+                pred_list = self.predict_locations_for_windows(img, self._model)
+                all_predictions.append(pred_list)
+            else:
+                all_predictions.append([])
 
-        return np.array(all_predictions)
+        y_pred = np.empty(len(X), dtype=object)
+        y_pred[:] = all_predictions
+        return y_pred
 
     def predict_image(self, image, model):
         category_to_label = {
@@ -69,7 +80,7 @@ class ObjectDetector:
                 break
 
     def predict_locations_for_windows(
-        self, coupe, model, window_size=1000, num_windows=1000
+        self, coupe, model, window_size=1000, num_windows=10
     ):
         boxes = self.generate_random_windows_for_image(
             coupe, window_size=window_size, num_windows=num_windows
@@ -91,4 +102,3 @@ if __name__ == "__main__":
     X = np.array(["D-1M01-3.jpg", "D-1M01-4.jpg"])
     predictions = detector.predict(X)
     print(predictions)
-

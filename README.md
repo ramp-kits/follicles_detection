@@ -19,6 +19,17 @@ pip install -U -r requirements.txt
 If you are using `conda`, we provide an `environment.yml` file for similar
 usage.
 
+### Download data
+
+TODO
+
+### Check installation
+
+```
+ramp-test --submission starting_kit
+ramp-test --submission random_classifier
+```
+
 ### Challenge description
 
 Get started with the [dedicated notebook]
