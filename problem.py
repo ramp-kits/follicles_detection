@@ -37,26 +37,46 @@ What we need to define:
 
 """
 import re
+import sys
 import os
 import pandas as pd
+import numpy as np
 
 from rampwf.workflows import ObjectDetector
-from rampwf.prediction_types.base import BasePrediction
+
+# from rampwf.prediction_types.base import BasePrediction
+# from rampwf.prediction_types import make_detection
+from rampwf.prediction_types.detection import Predictions as DetectionPredictions
 
 from sklearn.model_selection import LeaveOneGroupOut
 
-
+sys.path.append(os.path.dirname(__file__))
 from ramp_custom.scores import AveragePrecision
 
 problem_title = "Follicle Detection and Classification"
 
-# A type (class) which will be used to create wrapper objects for y_pred
-# Predictions = rw.prediction_types.make_multiclass(label_names=_prediction_label_names)
-Predictions = BasePrediction
 
-# An object implementing the workflow
+class CustomPredictions(DetectionPredictions):
+    @classmethod
+    def combine(cls, predictions_list, index_list=None, greedy=False):
+        # if index_list is None:  # we combine the full list
+        #     index_list = range(len(predictions_list))
+        # y_comb_list = np.array([predictions_list[i].y_pred for i in index_list])
+        # combined_predictions = cls(y_pred=y_comb_list)
+        print("Combine!")
+        print(
+            f"Calling combine with a list of {len(predictions_list)} Predictions object"
+        )
+        print("index is none : ", index_list is None)
+        for p in predictions_list:
+            print(f"     - len(y) :  {len(p.y_pred)}")
+
+        return predictions_list[0]
+
+
+# REQUIRED
+Predictions = CustomPredictions
 workflow = ObjectDetector()
-
 score_types = [AveragePrecision()]
 
 
@@ -77,27 +97,41 @@ def get_cv(X, y):
 def format_labels_to_problem_data(df):
     """
     df: pd.DataFrame
-        columns: image, label
+        columns: filename, label
                   xmin, ymin, xmax, ymax
     """
-    X = df["image"]
-    y = [
-        {
-            "label": row["label"],
-            "bbox": (row["xmin"], row["ymin"], row["xmax"], row["ymax"]),
-        }
-        for row in df.iterrows()
-    ]
+    filepaths = []
+    locations = []
+    for filename, group in df.groupby("filename"):
+        filepath = os.path.join("data", "images_jpg", filename)
+        filepaths.append(filepath)
+
+        locations_in_image = [
+            {
+                "label": row["label"],
+                "bbox": (row["xmin"], row["ymin"], row["xmax"], row["ymax"]),
+            }
+            for _, row in group.iterrows()
+        ]
+        locations.append(locations_in_image)
+
+    X = np.array(filepaths)
+    y = np.array(locations)
+    assert len(X) == len(y)
     return X, y
 
 
 def get_train_data(path="."):
     labels = pd.read_csv(os.path.join(path, "data", "labels.csv"))
-    labels = labels.loc[labels["set"] == "train"]
+    test_ovary = "D-1M06"
+    is_test_ovary = labels["filename"].str.contains(test_ovary)
+    labels = labels.loc[~is_test_ovary]
     return format_labels_to_problem_data(labels)
 
 
 def get_test_data(path="."):
     labels = pd.read_csv(os.path.join(path, "data", "labels.csv"))
-    labels = labels.loc[labels["set"] == "test"]
+    test_ovary = "D-1M06"
+    is_test_ovary = labels["filename"].str.contains(test_ovary)
+    labels = labels.loc[is_test_ovary]
     return format_labels_to_problem_data(labels)
