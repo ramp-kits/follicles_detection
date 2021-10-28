@@ -120,6 +120,10 @@ def format_labels_to_problem_data(df):
     X = np.array(filepaths, dtype=object)
     y = np.array(locations, dtype=object)
     assert len(X) == len(y)
+    if os.environ.get("RAMP_TEST_MODE", False):
+        # launched with --quick-test option; only a small subset of the data
+        X = X[[1, -1]]
+        y = y[[1, -1]]
     return X, y
 
 
