@@ -58,7 +58,7 @@ class ObjectDetector:
         """
         # Our self._model takes as input a tensor (M, 224, 224, 3) and a class encoded as a number
         # Consequently we need to build these images from the files on disc
-        text_label_to_class = {
+        class_to_index = {
             "Negative": 0,
             "Primordial": 1,
             "Primary": 2,
@@ -74,9 +74,9 @@ class ObjectDetector:
             image = load_image(filepath)
 
             for loc in locations:
-                label, bbox = loc["label"], loc["bbox"]
+                class_, bbox = loc["class"], loc["bbox"]
 
-                prediction = text_label_to_class[label]
+                prediction = class_to_index[class_]
                 expected_predictions.append(prediction)
 
                 thumbnail = image.crop(bbox)
@@ -166,7 +166,7 @@ def build_cropped_images(image, boxes, target_size):
 
 def convert_probas_to_locations(probas, boxes):
     top_index, top_proba = np.argmax(probas, axis=1), np.max(probas, axis=1)
-    index_to_label = {
+    index_to_class = {
         0: "Negative",
         1: "Primordial",
         2: "Primary",
@@ -177,7 +177,7 @@ def convert_probas_to_locations(probas, boxes):
     for index, proba, box in zip(top_index, top_proba, boxes):
         if index != 0:
             locations.append(
-                {"label": index_to_label[index], "proba": proba, "bbox": box}
+                {"class": index_to_class[index], "proba": proba, "bbox": box}
             )
     return locations
 
