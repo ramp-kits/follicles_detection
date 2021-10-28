@@ -5,15 +5,15 @@
 #### Métriques
 
 Pour l'instant on n'a que l'AveragePrecition pour la classe "Secondary"
-- il faut le calculer pour les autres classes
-- les submission seront classées en fonction d'un moyenne pondérée des AP par classe
+- [ ] il faut le calculer pour les autres classes
+- [ ] les submission seront classées en fonction d'un moyenne pondérée des AP par classe
 
 #### Data
 
 Il faut les rendre accessibles:
-- les mettre sur OSF
-- créer un download_data.py et le tester
-- définir une fois pour toute public vs private
+- [ ] les mettre sur OSF
+- [ ] créer un download_data.py et le tester
+- [ ] définir une fois pour toute public vs private, train vs test
 
 
 Valider le format des données qu'on fournit:
@@ -25,23 +25,25 @@ Valider le format des données qu'on fournit:
 
 #### Documentation pour les participants
 
-- README qui explique comment installer et comment lancer une soumission
-- notebook qui
+- [ ] README qui explique comment installer et comment lancer une soumission
+- [ ] notebook qui
     - explique les données / le challenge
     - implémente une soumission
-- supprimer tous les notebooks "périmés"
+- [ ] supprimer tous les notebooks "périmés"
 
 ## workflow RAMP
 
 - pour l'instant on n'arrive pas à combiner les prédictions de plusieurs modèle
     - si je le fais: toutes les soumissions seront traitées par NMS même
       si le candidat n'a pas pensé à l'implémenter. Risque de confusion.
-    - j'aimerais me passer de ces "bagged predictions" -> est-ce que c'est possible ?
+    - [ ] j'aimerais me passer de ces "bagged predictions" -> est-ce que c'est possible ?
 
 - refactor le code qui calcule AveragePrecision qui hérite du code du notebook
   un peu bordélique
   - peut être qu'il faut re-définir le format des `y_pred` que doivent retourner
     les modèles. Aujourd'hui c'est:
+
+    ```
     np.array(
         # first image
         [
@@ -52,8 +54,9 @@ Valider le format des données qu'on fournit:
         # second image
         []
     )
+    ```
 
-- est-ce qu'on peut faire mieux pour avoir un package local `ramp_custom`
+- [ ] est-ce qu'on peut faire mieux pour avoir un package local `ramp_custom`
   qui peut être utilisé par les participants et dans le `problem.py` ?
 
 ## Soumissions "random window classifier"
@@ -69,9 +72,11 @@ Valider le format des données qu'on fournit:
 On veut permettre à un utilisateur de lancer cette soumission en
 moins de 20 minutes. Les pistes sont:
 
-- configurer le `problem.py` pour utiliser "--quick-test"
+- [x] configurer le `problem.py` pour utiliser "--quick-test"
   et ne charger qu'une sous-partie des données
-- "vectoriser" l'appel au model au moment de la prédiction
+- [x] mesurer ce qui prend du temps dans les prédictions.
+      voir [cette issue](https://github.com/frcaud/follicles_detection/issues/9)
+- [x] "vectoriser" l'appel au model au moment de la prédiction
   Pour chaque image:
     - on génère une liste de tuple de boxes à classifier
     - on genère un tensor d'images cropped et resized (ligne = cropped image)
@@ -79,12 +84,11 @@ moins de 20 minutes. Les pistes sont:
         (comment faire ça non séquentiellement ???)
     - on applique une seule fois model.predict(tensor)
         -> sort les probas par classe sous la forme (n_cropping_boxes, n_classes)
-    - le reste peut être pareil
-  Pour savoir savoir si c'est pertient: mesurer ce qui prend du temps dans notre méthode:
-  load image / crop image / predict
+
+  
 
 
 #### Améliorer la qualité de prédiction
 
-Pour l'instant seulement les boxes de ~1000px -> on ne détecte que des secondary.
+- [ ] Pour l'instant seulement les boxes de ~1000px -> on ne détecte que des secondary.
 Attention si on met des petites boxes ça va prendre plus longtemps.
