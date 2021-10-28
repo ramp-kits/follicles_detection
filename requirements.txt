@@ -13,3 +13,4 @@ sklearn
 # dev
 flake8
 black
+line_profiler
