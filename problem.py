@@ -95,22 +95,22 @@ def get_cv(X, y):
     return cv.split(X, y, groups)
 
 
-def format_labels_to_problem_data(df):
+def _get_data(path=".", split="train"):
     """
-    df: pd.DataFrame
-        columns: filename, label
-                  xmin, ymin, xmax, ymax
+    return: X: array of N image paths
+            y: array of N lists of dicts: {"bbox", "class"}
     """
+    labels = pd.read_csv(os.path.join(path, "data", split, "labels.csv"))
     filepaths = []
     locations = []
-    for filename, group in df.groupby("filename"):
-        filepath = os.path.join("data", "images_jpg", filename)
+    for filename, group in labels.groupby("filename"):
+        filepath = os.path.join("data", split, filename)
         filepaths.append(filepath)
 
         locations_in_image = [
             {
-                "label": row["class"],
                 "bbox": (row["xmin"], row["ymin"], row["xmax"], row["ymax"]),
+                "class": row["class"],
             }
             for _, row in group.iterrows()
         ]
@@ -123,16 +123,9 @@ def format_labels_to_problem_data(df):
 
 
 def get_train_data(path="."):
-    labels = pd.read_csv(os.path.join(path, "data", "labels.csv"))
-    test_ovary = "D-1M06"
-    is_test_ovary = labels["filename"].str.contains(test_ovary)
-    labels = labels.loc[~is_test_ovary]
-    return format_labels_to_problem_data(labels)
+    return _get_data(path, "train")
 
 
 def get_test_data(path="."):
-    labels = pd.read_csv(os.path.join(path, "data", "labels.csv"))
-    test_ovary = "D-1M06"
-    is_test_ovary = labels["filename"].str.contains(test_ovary)
-    labels = labels.loc[is_test_ovary]
-    return format_labels_to_problem_data(labels)
+    return _get_data(path, "test")
+
