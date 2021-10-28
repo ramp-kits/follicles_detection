@@ -6,6 +6,7 @@ jupyter
 pandas
 click
 Pillow
+osfclient
 
 tensorflow==2.6.0
 sklearn
@@ -13,4 +14,3 @@ sklearn
 # dev
 flake8
 black
-line_profiler

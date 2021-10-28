@@ -57,7 +57,7 @@ def compute_precision_recall(y_true, y_pred, iou_threshold=0.3):
         true_boxes = [
             location
             for location in true_locations
-            if location["label"] == predicted_class
+            if location["class"] == predicted_class
         ]
         if not true_boxes:
             continue
@@ -67,7 +67,7 @@ def compute_precision_recall(y_true, y_pred, iou_threshold=0.3):
             for location in sorted(
                 predicted_locations, key=lambda loc: loc["proba"], reverse=True
             )
-            if location["label"] == predicted_class
+            if location["class"] == predicted_class
         ]
 
         precision = [1]
