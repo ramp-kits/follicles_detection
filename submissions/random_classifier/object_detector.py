@@ -10,18 +10,83 @@ sys.path.append(repo_folder)
 from ramp_custom.utils import load_image
 from ramp_custom.utils import do_profile
 
-MODELS_FOLDER = os.path.join(repo_folder, "models")
-MODEL_NAME_FOR_PREDICTION = "classifier"
-
 
 class ObjectDetector:
     def __init__(self):
-        self._model = tf.keras.models.load_model(
-            os.path.join(MODELS_FOLDER, MODEL_NAME_FOR_PREDICTION)
-        )
+        self.IMG_SHAPE = (224, 224, 3)  # 3-colored images
 
-    def fit(self, X, y):
-        # ignore inputs for now
+        base_model = tf.keras.applications.MobileNetV2(
+            input_shape=self.IMG_SHAPE, include_top=False, weights="imagenet"
+        )
+        base_model.trainable = False
+
+        inputs = tf.keras.Input(shape=self.IMG_SHAPE)
+
+        preprocess_input = tf.keras.applications.mobilenet_v2.preprocess_input
+        global_average_layer = tf.keras.layers.GlobalAveragePooling2D()
+        prediction_layer = tf.keras.layers.Dense(5, activation="softmax")
+
+        x = preprocess_input(inputs)
+        x = base_model(x, training=False)
+        x = global_average_layer(x)
+        x = tf.keras.layers.Dropout(0.2)(x)
+        outputs = prediction_layer(x)
+
+        model = tf.keras.Model(inputs, outputs)
+
+        model.compile(
+            optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001),
+            loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+            metrics=["sparse_categorical_accuracy"],
+        )
+        self._model = model
+
+    def fit(self, X_image_paths, y_true_locations):
+        """
+        Parameters
+        ----------
+        X_image_paths : np.array of shape (N, )
+            each element is a single absolute path to an image
+        y_true_locations : np.array of shape (N, )
+            each element is a list that represent the
+            true locations of follicles in the corresponding image
+
+        Returns
+        -------
+        self
+
+        """
+        # Our self._model takes as input a tensor (M, 224, 224, 3) and a class encoded as a number
+        # Consequently we need to build these images from the files on disc
+        text_label_to_class = {
+            "Negative": 0,
+            "Primordial": 1,
+            "Primary": 2,
+            "Secondary": 3,
+            "Tertiary": 4,
+        }
+
+        thumbnails = []
+        expected_predictions = []
+
+        for filepath, locations in zip(X_image_paths, y_true_locations):
+            print(f"reading {filepath}")
+            image = load_image(filepath)
+
+            for loc in locations:
+                label, bbox = loc["label"], loc["bbox"]
+
+                prediction = text_label_to_class[label]
+                expected_predictions.append(prediction)
+
+                thumbnail = image.crop(bbox)
+                thumbnail = thumbnail.resize((224, 224))
+                thumbnail = np.asarray(thumbnail)
+                thumbnails.append(thumbnail)
+
+        X_for_classifier = np.array(thumbnails)
+        y_for_classifier = np.array(expected_predictions)
+        self._model.fit(X_for_classifier, y_for_classifier, epochs=10)
         return self
 
     # @do_profile(follow=[predict_locations_for_windows, build_cropped_images])
@@ -31,13 +96,9 @@ class ObjectDetector:
         # each row = one file name for an image
         all_predictions = []
         for i, image_path in enumerate(X):
-            # TEMP: only make prediction for first image
-            if i == 0:
-                img = load_image(image_path)
-                pred_list = predict_locations_for_windows(img, self._model)
-                all_predictions.append(pred_list)
-            else:
-                all_predictions.append([])
+            img = load_image(image_path)
+            pred_list = predict_locations_for_windows(img, self._model)
+            all_predictions.append(pred_list)
 
         y_pred = np.empty(len(X), dtype=object)
         y_pred[:] = all_predictions
