@@ -16,7 +16,7 @@ class utils:
         ClassAveragePrecision,
         MeanAveragePrecision,
     )
-    from ramp_custom.predictions import CustomPredictions
+    from ramp_custom.predictions import make_custom_predictions
     from ramp_custom.images import load_image
     from ramp_custom import geometry
     from ramp_custom.geometry import apply_NMS_for_y_pred, apply_NMS_for_image
@@ -24,17 +24,19 @@ class utils:
 
 problem_title = "Follicle Detection and Classification"
 
-
+SCORING_IOU = 0.25
 # REQUIRED: Predictions, workflow, score_types, get_cv, get_train_data, get_test_data
-Predictions = utils.CustomPredictions
+Predictions = utils.make_custom_predictions(iou_threshold=SCORING_IOU)
 workflow = ObjectDetector()
 score_types = [
-    utils.ClassAveragePrecision("Primordial"),
-    utils.ClassAveragePrecision("Primary"),
-    utils.ClassAveragePrecision("Secondary"),
-    utils.ClassAveragePrecision("Tertiary"),
+    utils.ClassAveragePrecision("Primordial", iou_threshold=SCORING_IOU),
+    utils.ClassAveragePrecision("Primary", iou_threshold=SCORING_IOU),
+    utils.ClassAveragePrecision("Secondary", iou_threshold=SCORING_IOU),
+    utils.ClassAveragePrecision("Tertiary", iou_threshold=SCORING_IOU),
     utils.MeanAveragePrecision(
-        class_names=["Primordial", "Primary", "Secondary", "Tertiary"]
+        class_names=["Primordial", "Primary", "Secondary", "Tertiary"],
+        weights=[1, 1, 1, 1],
+        iou_threshold=SCORING_IOU,
     ),
 ]
 

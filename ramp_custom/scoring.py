@@ -9,17 +9,17 @@ class ClassAveragePrecision(BaseScoreType):
     minimum = 0.0
     maximum = 1.0
 
-    def __init__(self, class_name, iou_thresholdd=0.25):
+    def __init__(self, class_name, iou_threshold):
         self.name = f"AP <{class_name}>"
         self.precision = 3
 
         self.class_name = class_name
-        self.iou_thresholdd = iou_thresholdd
+        self.iou_threshold = iou_threshold
 
     def __call__(self, y_true, y_pred):
 
         precision, recall, _ = precision_recall_for_class(
-            y_true, y_pred, self.class_name, self.iou_thresholdd
+            y_true, y_pred, self.class_name, self.iou_threshold
         )
         return average_precision(precision, recall)
 
@@ -29,7 +29,7 @@ class MeanAveragePrecision(BaseScoreType):
     minimum = 0.0
     maximum = 1.0
 
-    def __init__(self, class_names, weights=None, iou_thresholdd=0.25):
+    def __init__(self, class_names, weights, iou_threshold):
         self.name = "mean AP"
         self.precision = 3
 
@@ -37,14 +37,14 @@ class MeanAveragePrecision(BaseScoreType):
         if weights is None:
             weights = [1 for _ in class_names]
         self.weights = weights
-        self.iou_thresholdd = iou_thresholdd
+        self.iou_threshold = iou_threshold
 
     def __call__(self, y_true, y_pred):
 
         mean_AP = 0
         for class_name, weight in zip(self.class_names, self.weights):
             precision, recall, _ = precision_recall_for_class(
-                y_true, y_pred, class_name, self.iou_thresholdd
+                y_true, y_pred, class_name, self.iou_threshold
             )
             mean_AP += weight * average_precision(precision, recall)
         mean_AP /= sum(self.weights)
@@ -59,10 +59,10 @@ def average_precision(precision, recall):
     )
 
 
-def precision_recall_for_class(y_true, y_pred, class_name, iou_thresholdd):
+def precision_recall_for_class(y_true, y_pred, class_name, iou_threshold):
     y_true = filter_class(y_true, class_name)
     y_pred = filter_class(y_pred, class_name)
-    return precision_recall_ignore_class(y_true, y_pred, iou_thresholdd)
+    return precision_recall_ignore_class(y_true, y_pred, iou_threshold)
 
 
 def filter_class(y, class_name):
@@ -75,7 +75,7 @@ def filter_class(y, class_name):
     return y_filtered
 
 
-def precision_recall_ignore_class(y_true, y_pred, iou_thresholdd):
+def precision_recall_ignore_class(y_true, y_pred, iou_threshold):
     fake_image_names = [f"image_{i}" for i in range(len(y_true))]
     true_locations = []
     predicted_locations = []
@@ -100,7 +100,7 @@ def precision_recall_ignore_class(y_true, y_pred, iou_thresholdd):
     for i, prediction in enumerate(predicted_locations):
         if len(true_locations) > 0:
             index, success = find_matching_bbox(
-                prediction, true_locations, iou_thresholdd
+                prediction, true_locations, iou_threshold
             )
             if success:
                 true_locations.pop(index)
