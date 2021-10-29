@@ -5,15 +5,15 @@
 #### Métriques
 
 Pour l'instant on n'a que l'AveragePrecition pour la classe "Secondary"
-- [ ] il faut le calculer pour les autres classes
-- [ ] les submission seront classées en fonction d'un moyenne pondérée des AP par classe
+- [x] il faut le calculer pour les autres classes
+- [x] les submission seront classées en fonction d'un moyenne pondérée des AP par classe
 
 #### Data
 
 Il faut les rendre accessibles:
-- [ ] les mettre sur OSF
-- [ ] créer un download_data.py et le tester
-- [ ] définir une fois pour toute public vs private, train vs test
+- [x] les mettre sur OSF
+- [x] créer un download_data.py et le tester
+- [x] définir une fois pour toute public vs private, train vs test
 
 
 Valider le format des données qu'on fournit:
@@ -36,11 +36,12 @@ Valider le format des données qu'on fournit:
 - pour l'instant on n'arrive pas à combiner les prédictions de plusieurs modèle
     - si je le fais: toutes les soumissions seront traitées par NMS même
       si le candidat n'a pas pensé à l'implémenter. Risque de confusion.
-    - [ ] j'aimerais me passer de ces "bagged predictions" -> est-ce que c'est possible ?
+    - [x] j'aimerais me passer de ces "bagged predictions" -> est-ce que c'est possible ? 
+      **NON** donc j'implémente les bagged predictions avec NMS
 
-- refactor le code qui calcule AveragePrecision qui hérite du code du notebook
+- [x] refactor le code qui calcule AveragePrecision qui hérite du code du notebook
   un peu bordélique
-  - peut être qu'il faut re-définir le format des `y_pred` que doivent retourner
+  - ? peut être qu'il faut re-définir le format des `y_pred` que doivent retourner
     les modèles. Aujourd'hui c'est:
 
     ```
@@ -63,9 +64,10 @@ Valider le format des données qu'on fournit:
 
 #### Entraîner le modèle
 
-- créer un "générateur type keras" pour les vignettes d'entraînement
-- entrainer le modèle plutôt que de le charger depuis un fichier
-  en utilisant ce générateur (model.fit_generator())
+- [ ] créer un "générateur type keras" pour les vignettes d'entraînement
+  - [x] finalement pas la peine : on charge toutes les vignettes dans un seul tensor
+- [x] entrainer le modèle plutôt que de le charger depuis un fichier
+  en utilisant le tenseur.
 
 #### Accélérer les choses
 
@@ -84,6 +86,7 @@ moins de 20 minutes. Les pistes sont:
         (comment faire ça non séquentiellement ???)
     - on applique une seule fois model.predict(tensor)
         -> sort les probas par classe sous la forme (n_cropping_boxes, n_classes)
+    - avec cette amélioration on passe de 6min à 1min20 pour la prédiction d'une seule image
 
   
 
