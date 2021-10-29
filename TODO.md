@@ -57,8 +57,10 @@ Valider le format des données qu'on fournit:
     )
     ```
 
-- [ ] est-ce qu'on peut faire mieux pour avoir un package local `ramp_custom`
+- [x] est-ce qu'on peut faire mieux pour avoir un package local `ramp_custom`
   qui peut être utilisé par les participants et dans le `problem.py` ?
+  J'ai une solution mais je ne suis pas sûr que ça soit le plus clair pour
+  les participants..
 
 ## Soumissions "random window classifier"
 

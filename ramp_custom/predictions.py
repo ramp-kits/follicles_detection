@@ -1,7 +1,7 @@
 import numpy as np
 from rampwf.prediction_types.detection import Predictions as DetectionPredictions
 
-from geometry import apply_NMS_for_y_pred
+from .geometry import apply_NMS_for_y_pred
 
 
 def make_custom_predictions(iou_threshold):
