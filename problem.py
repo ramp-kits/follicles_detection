@@ -48,9 +48,7 @@ from rampwf.workflows import ObjectDetector
 # from rampwf.prediction_types import make_detection
 from rampwf.prediction_types.detection import (
     Predictions as DetectionPredictions,
-    combine_predictions,
 )
-from rampwf.score_types import Combined
 from sklearn.model_selection import LeaveOneGroupOut
 
 sys.path.append(os.path.dirname(__file__))
@@ -83,7 +81,7 @@ class CustomPredictions(DetectionPredictions):
         # is a list of predictions made for this image (for this model)
         y_pred_list = [predictions_list[i].y_pred for i in index_list]
         n_images = len(y_pred_list[0])
-        # print(f"N images : {n_images}")
+
         all_predictions_by_image = [[] for _ in range(n_images)]
         num_predictions_by_image = [0 for _ in range(n_images)]
         for y_pred_for_model in y_pred_list:
@@ -110,7 +108,7 @@ class CustomPredictions(DetectionPredictions):
 # REQUIRED
 Predictions = CustomPredictions
 workflow = ObjectDetector()
-average_precisions = [
+score_types = [
     ClassAveragePrecision("Primordial"),
     ClassAveragePrecision("Primary"),
     ClassAveragePrecision("Secondary"),
@@ -118,16 +116,6 @@ average_precisions = [
     MeanAveragePrecision(
         class_names=["Primordial", "Primary", "Secondary", "Tertiary"]
     ),
-]
-
-score_types = [
-    *average_precisions,
-    # Combined(
-    #     name="Mean AP",
-    #     score_types=average_precisions,
-    #     weights=[1, 1, 1, 1],
-    #     precision=3,
-    # ),
 ]
 
 
