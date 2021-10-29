@@ -5,6 +5,18 @@ from .geometry import find_matching_bbox
 
 
 class ClassAveragePrecision(BaseScoreType):
+    """Compute average precision of predictions for one class.
+
+    Example
+    -------
+    >>> X_train, y_train = problem.get_train_data()
+    >>> y_pred = model.predict(X_train)
+    >>> metric = ClassAveragePrecision(class_name="Secondary", iou_threshold=problem.SCORING_IOU)
+    >>> metric(y_train, y_pred)
+    0.823
+
+    """
+
     is_lower_the_better = False
     minimum = 0.0
     maximum = 1.0
@@ -25,6 +37,18 @@ class ClassAveragePrecision(BaseScoreType):
 
 
 class MeanAveragePrecision(BaseScoreType):
+    """Compute mean of (average precision of predictions for one class).
+
+    Example
+    -------
+    >>> X_train, y_train = problem.get_train_data()
+    >>> y_pred = model.predict(X_train)
+    >>> metric = ClassAveragePrecision(iou_threshold=problem.SCORING_IOU)
+    >>> metric(y_train, y_pred)
+    0.823
+
+    """
+
     is_lower_the_better = False
     minimum = 0.0
     maximum = 1.0
@@ -52,7 +76,19 @@ class MeanAveragePrecision(BaseScoreType):
 
 
 def average_precision(precision, recall):
-    """WARNING: expected to be sorted by threshold"""
+    """Compute average precision for a given precision/recall curve.
+
+    definition: https://scikit-learn.org/stable/modules/generated/sklearn.metrics.average_precision_score.html#sklearn.metrics.average_precision_score
+
+    Warnings
+    --------
+    precision and recall arguments should be sorted by threshold.
+
+    Returns
+    -------
+    average_precision : float
+
+    """  # noqa : E501
     return sum(
         p * (r_i - r_i_1)
         for p, r_i, r_i_1 in zip(precision[1:], recall[1:], recall[:-1])
@@ -60,12 +96,56 @@ def average_precision(precision, recall):
 
 
 def precision_recall_for_class(y_true, y_pred, class_name, iou_threshold):
+    """Compute precision/recall curve for a single class.
+
+    Doc: https://github.com/rafaelpadilla/Object-Detection-Metrics
+
+    Parameters
+    ----------
+    y_true : np.array (n_images,)
+    y_pred : np.array (n_images,)
+        output of model. Each element in the array is a list
+        of predicted follicule locations for a single image.
+        Each element in these lists are dicts following this structure ::
+
+            {"bbox": (xmin, ymin, xmax, ymax), "category": "Primary", "proba": 0.872}
+
+    class_name : str
+        ex: 'Primary'
+    iou_threshold : float
+        Intersection Over Union threshold used to decide if two
+        bounding boxes are the same.
+
+    Returns
+    -------
+    precision : np.array
+        all returned array have the same length. They are sorted by
+        decreasing probability threshold.
+    recall : np.array
+    threshold : np.array
+
+    """
     y_true = filter_class(y_true, class_name)
     y_pred = filter_class(y_pred, class_name)
-    return precision_recall_ignore_class(y_true, y_pred, iou_threshold)
+    return _precision_recall_ignore_class(y_true, y_pred, iou_threshold)
 
 
 def filter_class(y, class_name):
+    """Filter a class in the output of a model
+
+    Parameters
+    ----------
+    y : np.array
+        array of predictions for multiple images. See :py:func:`precision_recall_for_class`
+    class_name : str
+        ex: 'Secondary'
+
+    Returns
+    -------
+    filtered_y : np.array
+        same shape as input y.
+
+    '"""
     filtered = [
         [location for location in image_locations if location["class"] == class_name]
         for image_locations in y
@@ -75,7 +155,7 @@ def filter_class(y, class_name):
     return y_filtered
 
 
-def precision_recall_ignore_class(y_true, y_pred, iou_threshold):
+def _precision_recall_ignore_class(y_true, y_pred, iou_threshold):
     fake_image_names = [f"image_{i}" for i in range(len(y_true))]
     true_locations = []
     predicted_locations = []
