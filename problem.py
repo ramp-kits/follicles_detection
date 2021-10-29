@@ -13,7 +13,7 @@ from sklearn.model_selection import LeaveOneGroupOut
 
 class utils:
     sys.path.append(os.path.abspath(os.path.dirname(__file__)))
-    from ramp_custom.scores import (
+    from ramp_custom.scoring import (
         ClassAveragePrecision,
         MeanAveragePrecision,
         apply_NMS_for_y_pred,
