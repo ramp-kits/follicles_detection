@@ -46,7 +46,10 @@ from rampwf.workflows import ObjectDetector
 
 # from rampwf.prediction_types.base import BasePrediction
 # from rampwf.prediction_types import make_detection
-from rampwf.prediction_types.detection import Predictions as DetectionPredictions
+from rampwf.prediction_types.detection import (
+    Predictions as DetectionPredictions,
+    combine_predictions,
+)
 from rampwf.score_types import Combined
 from sklearn.model_selection import LeaveOneGroupOut
 
@@ -58,21 +61,41 @@ problem_title = "Follicle Detection and Classification"
 
 class CustomPredictions(DetectionPredictions):
     @classmethod
-    def combine(cls, predictions_list, index_list=None, greedy=False):
-        # if index_list is None:  # we combine the full list
-        #     index_list = range(len(predictions_list))
-        # y_comb_list = np.array([predictions_list[i].y_pred for i in index_list])
-        # combined_predictions = cls(y_pred=y_comb_list)
-        if False:
-            print("Combine!")
-            print(
-                f"Calling combine with a list of {len(predictions_list)} Predictions object"
-            )
-            print("index is none : ", index_list is None)
-            for p in predictions_list:
-                print(f"     - len(y) :  {len(p.y_pred)}")
+    def combine(cls, predictions_list, index_list=None):
+        """
+        Parameters:
+            predictions_list : list of CustomPredictions instances
 
-        return predictions_list[0]
+        Returns:
+            combined_predictions : a single CustomPredictions instance
+
+        """
+        if index_list is None:  # we combine the full list
+            index_list = range(len(predictions_list))
+
+        # list of length N_predictions
+        # each element in the list is a y_pred which is a numpy
+        # array of length n_images. Each element in this array
+        # is a list of predictions made for this image (for this model)
+        y_pred_list = [predictions_list[i].y_pred for i in index_list]
+        n_images = len(y_pred_list[0])
+        all_predictions_by_image = [[] for _ in range(n_images)]
+        for y_pred_for_model in y_pred_list:
+            for image_index, predictions_for_image in enumerate(y_pred_for_model):
+                if predictions_for_image is not None:
+                    # predictions_for_image is a list of predictions
+                    #   (each prediction is a dict {"class": xx, "proba": xx, "bbox": xx})
+                    # that where made by a given model on a given image
+                    all_predictions_by_image[image_index] += predictions_for_image
+
+        # convert the result to a numpy array of list to make is compatible
+        # with ramp indexing
+        y_pred_combined = np.empty(n_images, dtype=object)
+        y_pred_combined[:] = all_predictions_by_image
+
+        # we return a single CustomPredictions object with the combined predictions
+        combined_predictions = cls(y_pred=y_pred_combined)
+        return combined_predictions
 
 
 # REQUIRED

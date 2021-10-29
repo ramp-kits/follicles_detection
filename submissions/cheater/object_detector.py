@@ -7,8 +7,10 @@ import problem
 class ObjectDetector:
     """Dummy object detector used to verify that we compute metrics accurately
 
-    It detects perfecly on train set for all classes except Primordial
-    It detects nothing on the first CV fold
+    It detects perfecly on train set except that:
+        - it detects nothing on the first CV fold
+        - it detects nothing for class Primary
+        - it detects 50% of class Primordial
     """
 
     def __init__(self):
@@ -27,11 +29,19 @@ class ObjectDetector:
             path_to_y = {path: y for path, y in zip(x_train, y_train)}
 
             pred = [path_to_y.get(path, [wrong_location]) for path in X]
+
+            def keep_prediction(location):
+                if location["class"] == "Primary":
+                    return False
+                if location["class"] == "Primordial":
+                    return random.random() > 0.5
+                return True
+
             pred = [
                 [
                     {"proba": random.random(), **location}
                     for location in image_locations
-                    if location["class"] != "Primary"
+                    if keep_prediction(location)
                 ]
                 for image_locations in pred
             ]
