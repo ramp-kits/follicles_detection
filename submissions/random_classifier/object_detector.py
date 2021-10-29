@@ -2,13 +2,7 @@ import os
 import numpy as np
 import tensorflow as tf
 
-
-import sys
-
-repo_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-sys.path.append(repo_folder)
-from ramp_custom.utils import load_image
-from ramp_custom.utils import do_profile
+import problem
 
 
 class ObjectDetector:
@@ -71,7 +65,7 @@ class ObjectDetector:
 
         for filepath, locations in zip(X_image_paths, y_true_locations):
             print(f"reading {filepath}")
-            image = load_image(filepath)
+            image = problem.utils.load_image(filepath)
 
             for loc in locations:
                 class_, bbox = loc["class"], loc["bbox"]
@@ -96,7 +90,7 @@ class ObjectDetector:
         # each row = one file name for an image
         all_predictions = []
         for i, image_path in enumerate(X):
-            img = load_image(image_path)
+            img = problem.utils.load_image(image_path)
             pred_list = predict_locations_for_windows(img, self._model)
             all_predictions.append(pred_list)
 
