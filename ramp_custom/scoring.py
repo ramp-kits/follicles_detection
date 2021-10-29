@@ -108,7 +108,10 @@ def precision_recall_ignore_class(y_true, y_pred, iou_thresholdd):
 
         threshold.append(prediction["proba"])
         precision.append(n_positive_detections / (i + 1))
-        recall.append(n_true_detected / n_true_to_detect)
+        if n_true_to_detect > 0:
+            recall.append(n_true_detected / n_true_to_detect)
+        else:
+            recall.append(0)
 
     return np.array(precision), np.array(recall), np.array(threshold)
 
