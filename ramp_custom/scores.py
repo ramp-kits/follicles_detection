@@ -8,17 +8,17 @@ class ClassAveragePrecision(BaseScoreType):
     minimum = 0.0
     maximum = 1.0
 
-    def __init__(self, class_name, iou_threshold=0.25):
+    def __init__(self, class_name, iou_thresholdd=0.25):
         self.name = f"AP <{class_name}>"
         self.precision = 3
 
         self.class_name = class_name
-        self.iou_threshold = iou_threshold
+        self.iou_thresholdd = iou_thresholdd
 
     def __call__(self, y_true, y_pred):
 
         precision, recall, _ = precision_recall_for_class(
-            y_true, y_pred, self.class_name, self.iou_threshold
+            y_true, y_pred, self.class_name, self.iou_thresholdd
         )
         return average_precision(precision, recall)
 
@@ -28,7 +28,7 @@ class MeanAveragePrecision(BaseScoreType):
     minimum = 0.0
     maximum = 1.0
 
-    def __init__(self, class_names, weights=None, iou_threshold=0.25):
+    def __init__(self, class_names, weights=None, iou_thresholdd=0.25):
         self.name = "mean AP"
         self.precision = 3
 
@@ -36,14 +36,14 @@ class MeanAveragePrecision(BaseScoreType):
         if weights is None:
             weights = [1 for _ in class_names]
         self.weights = weights
-        self.iou_threshold = iou_threshold
+        self.iou_thresholdd = iou_thresholdd
 
     def __call__(self, y_true, y_pred):
 
         mean_AP = 0
         for class_name, weight in zip(self.class_names, self.weights):
             precision, recall, _ = precision_recall_for_class(
-                y_true, y_pred, class_name, self.iou_threshold
+                y_true, y_pred, class_name, self.iou_thresholdd
             )
             mean_AP += weight * average_precision(precision, recall)
         mean_AP /= sum(self.weights)
@@ -58,10 +58,10 @@ def average_precision(precision, recall):
     )
 
 
-def precision_recall_for_class(y_true, y_pred, class_name, iou_threshold):
+def precision_recall_for_class(y_true, y_pred, class_name, iou_thresholdd):
     y_true = filter_class(y_true, class_name)
     y_pred = filter_class(y_pred, class_name)
-    return precision_recall_ignore_class(y_true, y_pred, iou_threshold)
+    return precision_recall_ignore_class(y_true, y_pred, iou_thresholdd)
 
 
 def filter_class(y, class_name):
@@ -74,7 +74,7 @@ def filter_class(y, class_name):
     return y_filtered
 
 
-def precision_recall_ignore_class(y_true, y_pred, iou_threshold):
+def precision_recall_ignore_class(y_true, y_pred, iou_thresholdd):
     fake_image_names = [f"image_{i}" for i in range(len(y_true))]
     true_locations = []
     predicted_locations = []
@@ -99,7 +99,7 @@ def precision_recall_ignore_class(y_true, y_pred, iou_threshold):
     for i, prediction in enumerate(predicted_locations):
         if len(true_locations) > 0:
             index, success = find_matching_bbox(
-                prediction, true_locations, iou_threshold
+                prediction, true_locations, iou_thresholdd
             )
             if success:
                 true_locations.pop(index)
@@ -113,7 +113,7 @@ def precision_recall_ignore_class(y_true, y_pred, iou_threshold):
     return np.array(precision), np.array(recall), np.array(threshold)
 
 
-def find_matching_bbox(prediction, list_of_true_values, iou_threshold):
+def find_matching_bbox(prediction, list_of_true_values, iou_thresholdd):
     """
 
     Parameters
@@ -140,7 +140,7 @@ def find_matching_bbox(prediction, list_of_true_values, iou_threshold):
     ious[is_different_image] = 0
 
     index, maximum = np.argmax(ious), np.max(ious)
-    return index, maximum > iou_threshold
+    return index, maximum > iou_thresholdd
 
 
 def compute_iou(boxes1, boxes2):
@@ -167,3 +167,41 @@ def compute_iou(boxes1, boxes2):
         boxes1_area[:, None] + boxes2_area - intersection_area, 1e-8
     )
     return np.clip(intersection_area / union_area, 0.0, 1.0)
+
+
+def apply_NMS_for_y_pred(y_pred, iou_threshold):
+    filtered_predictions = [
+        apply_NMS_for_image(predictions, iou_threshold) for predictions in y_pred
+    ]
+    y_pred_filtered = np.empty(len(y_pred), dtype=object)
+    y_pred_filtered[:] = filtered_predictions
+    return y_pred_filtered
+
+
+def apply_NMS_for_image(predictions, iou_threshold):
+    classes = set(pred["class"] for pred in predictions)
+    filtered_predictions = []
+    for class_name in classes:
+        pred_for_class = [pred for pred in predictions if pred["class"] == class_name]
+        filtered_pred_for_class = apply_NMS_ignore_class(pred_for_class, iou_threshold)
+        filtered_predictions += filtered_pred_for_class
+    return filtered_predictions
+
+
+def apply_NMS_ignore_class(predictions, iou_threshold):
+    selected_predictions = []
+    predictions_sorted = list(
+        sorted(predictions, key=lambda pred: pred["proba"], reverse=True)
+    )
+    while len(predictions_sorted) != 0:
+        best_box = predictions_sorted.pop(0)
+        selected_predictions.append(best_box)
+        best_box_coords = np.array(best_box["bbox"]).reshape(1, -1)
+        other_boxes_coords = np.array(
+            [location["bbox"] for location in predictions_sorted]
+        ).reshape(-1, 4)
+        ious = compute_iou(best_box_coords, other_boxes_coords)
+        for i, iou in reversed(list(enumerate(ious[0]))):
+            if iou > iou_threshold:
+                predictions_sorted.pop(i)
+    return selected_predictions

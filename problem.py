@@ -54,7 +54,11 @@ from rampwf.score_types import Combined
 from sklearn.model_selection import LeaveOneGroupOut
 
 sys.path.append(os.path.dirname(__file__))
-from ramp_custom.scores import ClassAveragePrecision, MeanAveragePrecision
+from ramp_custom.scores import (
+    ClassAveragePrecision,
+    MeanAveragePrecision,
+    apply_NMS_for_y_pred,
+)
 
 problem_title = "Follicle Detection and Classification"
 
@@ -79,7 +83,9 @@ class CustomPredictions(DetectionPredictions):
         # is a list of predictions made for this image (for this model)
         y_pred_list = [predictions_list[i].y_pred for i in index_list]
         n_images = len(y_pred_list[0])
+        # print(f"N images : {n_images}")
         all_predictions_by_image = [[] for _ in range(n_images)]
+        num_predictions_by_image = [0 for _ in range(n_images)]
         for y_pred_for_model in y_pred_list:
             for image_index, predictions_for_image in enumerate(y_pred_for_model):
                 if predictions_for_image is not None:
@@ -87,11 +93,14 @@ class CustomPredictions(DetectionPredictions):
                     #   (each prediction is a dict {"class": xx, "proba": xx, "bbox": xx})
                     # that where made by a given model on a given image
                     all_predictions_by_image[image_index] += predictions_for_image
+                    num_predictions_by_image[image_index] += 1
 
         # convert the result to a numpy array of list to make is compatible
         # with ramp indexing
         y_pred_combined = np.empty(n_images, dtype=object)
         y_pred_combined[:] = all_predictions_by_image
+        # apply Non Maximum Suppression to remove duplicated predictions
+        y_pred_combined = apply_NMS_for_y_pred(y_pred_combined, iou_threshold=0.25)
 
         # we return a single CustomPredictions object with the combined predictions
         combined_predictions = cls(y_pred=y_pred_combined)
