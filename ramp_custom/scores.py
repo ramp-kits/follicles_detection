@@ -16,23 +16,37 @@ class ClassAveragePrecision(BaseScoreType):
 
     def __call__(self, y_true, y_pred):
 
-        precisions, recalls, thresholds = compute_precision_recall(y_true, y_pred)
-        precision, recall = precisions[self.class_name], recalls[self.class_name]
-        if False:
-            print(
-                f"Measuring AveragePrecision with inputs of size {len(y_true)} / {len(y_pred)}"
-            )
-            print(f"  computing averagePrecision from curve of {len(precision)} points")
-        average_precision = sum(
-            p * (r_i - r_i_1)
-            for p, r_i, r_i_1 in zip(precision[1:], recall[1:], recall[:-1])
+        precision, recall, _ = precision_recall_for_class(
+            y_true, y_pred, self.class_name, self.iou_threshold
         )
-        return average_precision
+        return average_precision(precision, recall)
 
 
-def compute_precision_recall(y_true, y_pred, iou_threshold=0.3):
-    # STEP 1
-    # Adatapt to previous way of doing things
+def average_precision(precision, recall):
+    """WARNING: expected to be sorted by threshold"""
+    return sum(
+        p * (r_i - r_i_1)
+        for p, r_i, r_i_1 in zip(precision[1:], recall[1:], recall[:-1])
+    )
+
+
+def precision_recall_for_class(y_true, y_pred, class_name, iou_threshold):
+    y_true = filter_class(y_true, class_name)
+    y_pred = filter_class(y_pred, class_name)
+    return precision_recall_ignore_class(y_true, y_pred, iou_threshold)
+
+
+def filter_class(y, class_name):
+    filtered = [
+        [location for location in image_locations if location["class"] == class_name]
+        for image_locations in y
+    ]
+    y_filtered = np.empty(len(filtered), dtype=object)
+    y_filtered[:] = filtered
+    return y_filtered
+
+
+def precision_recall_ignore_class(y_true, y_pred, iou_threshold):
     fake_image_names = [f"image_{i}" for i in range(len(y_true))]
     true_locations = []
     predicted_locations = []
@@ -44,59 +58,31 @@ def compute_precision_recall(y_true, y_pred, iou_threshold=0.3):
         for pred_loc in pred_locations_image:
             predicted_locations.append({"image": image_name, **pred_loc})
 
-    # print(true_locations)
-    # STEP 2: precision / recall / thresholds for each class
-    classes = [
-        "Primordial",
-        "Primary",
-        "Secondary",
-        "Tertiary",
-    ]
-    precisions = {}
-    recalls = {}
-    thresholds = {}
-    for predicted_class in classes:
-        true_boxes = [
-            location
-            for location in true_locations
-            if location["class"] == predicted_class
-        ]
-        if not true_boxes:
-            continue
+    predicted_locations = list(
+        sorted(predicted_locations, key=lambda loc: loc["proba"], reverse=True)
+    )
 
-        pred_boxes = [
-            location
-            for location in sorted(
-                predicted_locations, key=lambda loc: loc["proba"], reverse=True
+    precision = [1]
+    recall = [0]
+    threshold = [1]
+    n_positive_detections = 0
+    n_true_detected = 0
+    n_true_to_detect = len(true_locations)
+    for i, prediction in enumerate(predicted_locations):
+        if len(true_locations) > 0:
+            index, success = find_matching_bbox(
+                prediction, true_locations, iou_threshold
             )
-            if location["class"] == predicted_class
-        ]
+            if success:
+                true_locations.pop(index)
+                n_positive_detections += 1
+                n_true_detected += 1
 
-        precision = [1]
-        recall = [0]
-        threshold = [1]
-        n_positive_detections = 0
-        n_true_detected = 0
-        n_true_to_detect = len(true_boxes)
-        for i, prediction in enumerate(pred_boxes):
-            if len(true_boxes) > 0:
-                index, success = find_matching_bbox(
-                    prediction, true_boxes, iou_threshold
-                )
-                if success:
-                    true_boxes.pop(index)
-                    n_positive_detections += 1
-                    n_true_detected += 1
+        threshold.append(prediction["proba"])
+        precision.append(n_positive_detections / (i + 1))
+        recall.append(n_true_detected / n_true_to_detect)
 
-            threshold.append(prediction["proba"])
-            precision.append(n_positive_detections / (i + 1))
-            recall.append(n_true_detected / n_true_to_detect)
-
-        precisions[predicted_class] = precision
-        recalls[predicted_class] = recall
-        thresholds[predicted_class] = threshold
-
-    return precisions, recalls, thresholds
+    return np.array(precision), np.array(recall), np.array(threshold)
 
 
 def find_matching_bbox(prediction, list_of_true_values, iou_threshold):

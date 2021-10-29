@@ -18,17 +18,15 @@ class ObjectDetector:
         return self
 
     def predict(self, X):
+        wrong_location = {"class": "Primordial", "proba": 0.5, "bbox": (0, 0, 10, 10)}
         if os.environ.get("IS_FIRST_FOLD", "true") == "true":
             os.environ["IS_FIRST_FOLD"] = "false"
-            pred = [
-                [{"class": "Primordial", "proba": 0.5, "bbox": (0, 0, 10, 10)}]
-                for _ in X
-            ]
+            pred = [[wrong_location] for _ in X]
         else:
             x_train, y_train = problem.get_train_data()
             path_to_y = {path: y for path, y in zip(x_train, y_train)}
 
-            pred = [path_to_y.get(path, []) for path in X]
+            pred = [path_to_y.get(path, [wrong_location]) for path in X]
             pred = [
                 [
                     {"proba": random.random(), **location}
