@@ -3,19 +3,21 @@ import numpy as np
 from rampwf.score_types.base import BaseScoreType
 
 
-class AveragePrecision(BaseScoreType):
+class ClassAveragePrecision(BaseScoreType):
     is_lower_the_better = False
     minimum = 0.0
     maximum = 1.0
 
-    def __init__(self, name="average precision", precision=3):
-        self.name = name
-        self.precision = precision
+    def __init__(self, class_name, iou_threshold=0.25):
+        self.class_name = class_name
+        self.iou_threshold = iou_threshold
+        self.name = f"AP <{class_name}>"
+        self.precision = 3
 
     def __call__(self, y_true, y_pred):
 
         precisions, recalls, thresholds = compute_precision_recall(y_true, y_pred)
-        precision, recall = precisions["Secondary"], recalls["Secondary"]
+        precision, recall = precisions[self.class_name], recalls[self.class_name]
         if False:
             print(
                 f"Measuring AveragePrecision with inputs of size {len(y_true)} / {len(y_pred)}"

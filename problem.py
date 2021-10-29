@@ -47,11 +47,11 @@ from rampwf.workflows import ObjectDetector
 # from rampwf.prediction_types.base import BasePrediction
 # from rampwf.prediction_types import make_detection
 from rampwf.prediction_types.detection import Predictions as DetectionPredictions
-
+from rampwf.score_types import Combined
 from sklearn.model_selection import LeaveOneGroupOut
 
 sys.path.append(os.path.dirname(__file__))
-from ramp_custom.scores import AveragePrecision
+from ramp_custom.scores import ClassAveragePrecision
 
 problem_title = "Follicle Detection and Classification"
 
@@ -78,7 +78,22 @@ class CustomPredictions(DetectionPredictions):
 # REQUIRED
 Predictions = CustomPredictions
 workflow = ObjectDetector()
-score_types = [AveragePrecision()]
+average_precisions = [
+    ClassAveragePrecision("Primordial"),
+    ClassAveragePrecision("Primary"),
+    ClassAveragePrecision("Secondary"),
+    ClassAveragePrecision("Tertiary"),
+]
+
+score_types = [
+    *average_precisions,
+    # Combined(
+    #     name="Mean AP",
+    #     score_types=average_precisions,
+    #     weights=[1, 1, 1, 1],
+    #     precision=3,
+    # ),
+]
 
 
 def get_cv(X, y):
