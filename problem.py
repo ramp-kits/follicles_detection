@@ -51,7 +51,7 @@ from rampwf.score_types import Combined
 from sklearn.model_selection import LeaveOneGroupOut
 
 sys.path.append(os.path.dirname(__file__))
-from ramp_custom.scores import ClassAveragePrecision
+from ramp_custom.scores import ClassAveragePrecision, MeanAveragePrecision
 
 problem_title = "Follicle Detection and Classification"
 
@@ -83,6 +83,9 @@ average_precisions = [
     ClassAveragePrecision("Primary"),
     ClassAveragePrecision("Secondary"),
     ClassAveragePrecision("Tertiary"),
+    MeanAveragePrecision(
+        class_names=["Primordial", "Primary", "Secondary", "Tertiary"]
+    ),
 ]
 
 score_types = [
