@@ -10,7 +10,8 @@ Welcome to follicles-detection-helpers's documentation!
    :maxdepth: 1
    :caption: Contents:
 
-   readme 
+   readme
+   submission
    api/images
    api/geometry
    api/scoring
