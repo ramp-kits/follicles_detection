@@ -30,6 +30,15 @@ ramp-test --submission starting_kit
 ramp-test --submission random_classifier
 ```
 
+### Build documentation
+
+```
+cd doc
+make html
+```
+
+Open the file `doc/build/html/index.html` in a browser.
+
 ### Challenge description
 
 Get started with the [dedicated notebook]
