@@ -7,11 +7,14 @@ Welcome to follicles-detection-helpers's documentation!
 =======================================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
 
+   readme 
+   api/images
+   api/geometry
+   api/scoring
 
-   api
 
 
 Indices and tables

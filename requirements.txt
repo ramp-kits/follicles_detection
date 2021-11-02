@@ -16,3 +16,4 @@ flake8
 black
 sphinx
 pydata-sphinx-theme
+myst-parser
