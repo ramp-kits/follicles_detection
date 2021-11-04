@@ -1,3 +1,36 @@
+"""
+total runtime ~20min
+
+----------------------------
+Mean CV scores
+----------------------------
+	score AP <Primordial>    AP <Primary>  AP <Secondary>   AP <Tertiary>         mean AP          time
+	train  0.001 ± 0.0008  0.047 ± 0.0353  0.308 ± 0.0659  0.398 ± 0.0362  0.188 ± 0.0136  93.7 ± 14.28
+	valid  0.017 ± 0.0301  0.037 ± 0.0456  0.328 ± 0.1136  0.472 ± 0.1064  0.214 ± 0.0511  62.0 ± 11.18
+	test   0.011 ± 0.0211  0.039 ± 0.0278  0.477 ± 0.1798    0.493 ± 0.17  0.255 ± 0.0404   20.4 ± 0.26
+----------------------------
+Bagged scores
+----------------------------
+	score  AP <Primordial>  AP <Primary>  AP <Secondary>  AP <Tertiary>  mean AP
+	valid            0.004         0.013           0.376          0.625    0.254
+	test             0.004         0.084           0.558          0.759    0.351
+
+
+----------------------------
+Mean CV scores
+----------------------------
+	score AP <Primordial>    AP <Primary>  AP <Secondary>   AP <Tertiary>         mean AP           time
+	train    0.0 ± 0.0001  0.036 ± 0.0143  0.315 ± 0.0493  0.425 ± 0.0558  0.194 ± 0.0235  104.3 ± 13.93
+	valid   0.003 ± 0.005  0.041 ± 0.0632  0.336 ± 0.1355  0.514 ± 0.0624  0.224 ± 0.0454   121.7 ± 1.43
+	test   0.001 ± 0.0021  0.009 ± 0.0117  0.471 ± 0.1009  0.297 ± 0.1463  0.194 ± 0.0227    21.5 ± 0.19
+----------------------------
+Bagged scores
+----------------------------
+	score  AP <Primordial>  AP <Primary>  AP <Secondary>  AP <Tertiary>  mean AP
+	valid            0.000         0.014           0.390          0.646    0.263
+	test             0.001         0.018           0.749          0.690    0.365
+    
+"""
 import os
 import numpy as np
 import tensorflow as tf
@@ -18,6 +51,18 @@ if gpus:
   except RuntimeError as e:
     # Visible devices must be set before GPUs have been initialized
     print(e)
+
+def load_tf_image(image_path):
+    from tensorflow.python.framework.errors_impl import InvalidArgumentError
+    try:
+        image_raw = tf.io.read_file(image_path)
+        image = tf.image.decode_jpeg(image_raw)
+    except InvalidArgumentError:
+        # image is too large
+        image_pil = problem.utils.load_image(image_path)
+        image_np = np.asarray(image_pil)
+        image = tf.convert_to_tensor(image_np)
+    return image
 
 
 def generate_random_windows_for_image(image, window_size, num_windows):
@@ -73,6 +118,21 @@ def build_cropped_images(image, boxes, crop_size):
     )
     return cropped_images
 
+
+def predict_single_image(image_path, model):
+        image = load_tf_image(image_path)
+        
+
+        # width, height, depth = image.shape.as_list()
+        boxes_sizes = [3000, 1000, 300]  # px
+        boxes_amount = [200, 500, 2_000]
+        boxes = generate_random_windows_for_image(image, boxes_sizes, boxes_amount)
+        cropped_images = build_cropped_images(image, boxes, (224, 224))
+
+        predicted_probas = model.predict(cropped_images)
+        predicted_locations = convert_probas_to_locations(predicted_probas, boxes)
+        return predicted_locations
+
 def convert_probas_to_locations(probas, boxes):
     top_index, top_proba = np.argmax(probas, axis=1), np.max(probas, axis=1)
     index_to_class = {
@@ -126,6 +186,7 @@ class ObjectDetector:
         )
         self._model = model
 
+    @do_profile()
     def fit(self, X_image_paths, y_true_locations):
         """
         Parameters
@@ -156,56 +217,54 @@ class ObjectDetector:
 
         for filepath, locations in zip(X_image_paths, y_true_locations):
             print(f"reading {filepath}")
-            image = problem.utils.load_image(filepath)
 
-            for loc in locations:
-                class_, bbox = loc["class"], loc["bbox"]
+            expected_preds_for_image = [
+                class_to_index[loc["class"]]
+                for loc in locations
+            ]
+            expected_predictions += expected_preds_for_image
 
-                prediction = class_to_index[class_]
-                expected_predictions.append(prediction)
+            image = load_tf_image(filepath)
+            
+            boxes = [loc["bbox"] for loc in locations]
+            thumbnails_for_image = build_cropped_images(image, boxes, self.IMG_SHAPE[0:2])
+            thumbnails.append(thumbnails_for_image)
+            
 
-                thumbnail = image.crop(bbox)
-                thumbnail = thumbnail.resize((224, 224))
-                thumbnail = np.asarray(thumbnail)
-                thumbnails.append(thumbnail)
-
-        X_for_classifier = np.array(thumbnails)
-        y_for_classifier = np.array(expected_predictions)
-        self._model.fit(X_for_classifier, y_for_classifier, epochs=10)
+        X_for_classifier = tf.concat(thumbnails, axis=0)
+        y_for_classifier = tf.constant(expected_predictions)
+        infos = {
+            "X": X_for_classifier.shape,
+            "y": y_for_classifier.shape
+        }
+        print(infos)
+        self._model.fit(X_for_classifier, y_for_classifier, epochs=100)
         return self
 
+    
+
+    @do_profile(follow=[predict_single_image])
     def predict(self, X):
         print("Running predictions ...")
         # X = numpy array N rows, 1 column, type object
         # each row = one file name for an image
         y_pred = np.empty(len(X), dtype=object)
         for i, image_path in enumerate(X):
-            prediction_list_for_image = self.predict_single_image(image_path)
+            prediction_list_for_image = predict_single_image(image_path, self._model)
             y_pred[i] = prediction_list_for_image
 
         return y_pred
 
-    def predict_single_image(self, image_path):
-        
-        image_raw = tf.io.read_file(image_path)
-        image = tf.image.decode_jpeg(image_raw)
+    
 
-        # width, height, depth = image.shape.as_list()
-        boxes_sizes = [1000, 200]  # px
-        boxes_amount = [200, 5_000]
-        boxes = generate_random_windows_for_image(image, boxes_sizes, boxes_amount)
-        cropped_images = build_cropped_images(image, boxes, self.IMG_SHAPE[0:2])
-
-        predicted_probas = self._model.predict(cropped_images)
-        predicted_locations = convert_probas_to_locations(predicted_probas, boxes)
-        return predicted_locations
 
 
 
 def run_model():
     MODEL_PATH = os.path.join(problem.REPO_PATH, "models", "classifier")
+    DO_TRAIN = True
     # Train model if it does not exist
-    if not os.path.exists(MODEL_PATH):
+    if DO_TRAIN or not os.path.exists(MODEL_PATH):
         os.makedirs(MODEL_PATH, exist_ok=True)
         detector = ObjectDetector()
         X_train, y_train = problem.get_train_data()
