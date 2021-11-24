@@ -22,6 +22,8 @@ import tensorflow as tf
 from matplotlib.image import imread
 import PIL
 
+PIL.Image.MAX_IMAGE_PIXELS = None  # otherwise large images cannot be loaded
+
 gpus = tf.config.list_physical_devices("GPU")
 if gpus:
     # Restrict TensorFlow to only use the last GPU
@@ -110,7 +112,7 @@ class ObjectDetector:
 
                 boxes_for_images.append(true_bbox)
 
-            image = load_tf_image(filepath)
+            image = imread(filepath)
             thumbnails_for_image = build_cropped_images(
                 image, boxes_for_images, self.IMG_SHAPE[0:2]
             )
@@ -137,7 +139,7 @@ class ObjectDetector:
         return y_pred
 
     def predict_single_image(self, image_path):
-        image = load_tf_image(image_path)
+        image = imread(image_path)
 
         boxes_sizes = [3000, 1000, 300]  # px
         boxes_amount = [200, 500, 2_000]
@@ -161,17 +163,6 @@ class ObjectDetector:
         return predicted_locations
 
 
-def load_tf_image(image_path):
-    """Load jpeg from path as tf.Tensor"""
-    print(f"reading {image_path}")
-    PIL.Image.MAX_IMAGE_PIXELS = None
-
-    image = imread(image_path)
-    image = tf.convert_to_tensor(image)
-
-    return image
-
-
 def generate_random_windows_for_image(image, window_sizes, num_windows):
     """create list of bounding boxes of varying sizes
 
@@ -187,7 +178,7 @@ def generate_random_windows_for_image(image, window_sizes, num_windows):
 
     """
     assert len(window_sizes) == len(num_windows)
-    image_height, image_width, _ = image.shape.as_list()
+    image_height, image_width, _ = image.shape
     all_boxes = []
 
     for size, n_boxes in zip(window_sizes, num_windows):
@@ -209,8 +200,8 @@ def build_cropped_images(image, boxes, crop_size):
 
     Parameters
     ----------
-    image: tf.Tensor shape (height, width, depth)
-    boxes: list of tuple
+    image : np.array of shape (height, width, depth)
+    boxes : list of tuple
         each element in the list is (xmin, ymin, xmax, ymax)
     crop_size : tuple(2)
         size of the returned cropped images
@@ -218,13 +209,13 @@ def build_cropped_images(image, boxes, crop_size):
 
     Returns
     -------
-    cropped_images : np.array
+    cropped_images : tensor
         example shape (N_boxes, 224, 224, 3)
 
     """
-    height, width, _ = image.shape.as_list()
-
-    images_tensor = [image]
+    height, width, _ = image.shape
+    images_tensor = [tf.convert_to_tensor(image)]
+    # WARNING: tf.convert_to_tensor([image])   does not seem to work..
     boxes_for_tf = [
         (y1 / height, x1 / width, y2 / height, x2 / width) for x1, y1, x2, y2 in boxes
     ]
