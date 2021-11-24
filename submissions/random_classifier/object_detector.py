@@ -1,31 +1,27 @@
 """
 Result of `ramp-test --submision random_classifier`
 
-total runtime ~20min
+total runtime ~30min
 
 ----------------------------
 Mean CV scores
 ----------------------------
 	score AP <Primordial>    AP <Primary>  AP <Secondary>   AP <Tertiary>         mean AP           time
-	train    0.0 ± 0.0001  0.036 ± 0.0143  0.315 ± 0.0493  0.425 ± 0.0558  0.194 ± 0.0235  104.3 ± 13.93
-	valid   0.003 ± 0.005  0.041 ± 0.0632  0.336 ± 0.1355  0.514 ± 0.0624  0.224 ± 0.0454   121.7 ± 1.43
-	test   0.001 ± 0.0021  0.009 ± 0.0117  0.471 ± 0.1009  0.297 ± 0.1463  0.194 ± 0.0227    21.5 ± 0.19
+	train  0.001 ± 0.0007  0.023 ± 0.0077   0.375 ± 0.025  0.436 ± 0.0563  0.209 ± 0.0208  130.8 ± 20.49
+	valid       0.0 ± 0.0  0.037 ± 0.0214  0.332 ± 0.0734  0.458 ± 0.0557  0.207 ± 0.0107   166.2 ± 5.91
+	test   0.001 ± 0.0018  0.008 ± 0.0141  0.325 ± 0.1782  0.398 ± 0.1259  0.183 ± 0.0683    32.3 ± 0.48
 ----------------------------
 Bagged scores
 ----------------------------
 	score  AP <Primordial>  AP <Primary>  AP <Secondary>  AP <Tertiary>  mean AP
-	valid            0.000         0.014           0.390          0.646    0.263
-	test             0.001         0.018           0.749          0.690    0.365
-    
+	valid            0.000         0.026           0.361          0.626    0.253
+	test             0.002         0.008           0.475          0.625    0.278
 """
 import os
 import numpy as np
 import tensorflow as tf
-
-import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
-import problem
-
+from matplotlib.image import imread
+import PIL
 
 gpus = tf.config.list_physical_devices('GPU')
 if gpus:
@@ -37,18 +33,6 @@ if gpus:
   except RuntimeError as e:
     # Visible devices must be set before GPUs have been initialized
     print(e)
-
-def load_tf_image(image_path):
-    from tensorflow.python.framework.errors_impl import InvalidArgumentError
-    try:
-        image_raw = tf.io.read_file(image_path)
-        image = tf.image.decode_jpeg(image_raw)
-    except InvalidArgumentError:
-        # image is too large
-        image_pil = problem.utils.load_image(image_path)
-        image_np = np.asarray(image_pil)
-        image = tf.convert_to_tensor(image_np)
-    return image
 
 
 
@@ -115,7 +99,6 @@ class ObjectDetector:
         expected_predictions = []
 
         for filepath, locations in zip(X_image_paths, y_true_locations):
-            print(f"reading {filepath}")
 
             boxes_for_images = []
             for true_location in locations:
@@ -173,6 +156,15 @@ class ObjectDetector:
                 )
         return predicted_locations
 
+def load_tf_image(image_path):
+    """Load jpeg from path as tf.Tensor"""
+    print(f"reading {image_path}")
+    PIL.Image.MAX_IMAGE_PIXELS = None
+
+    image = imread(image_path)
+    image = tf.convert_to_tensor(image)
+
+    return image
 
 
 def generate_random_windows_for_image(image, window_sizes, num_windows):
