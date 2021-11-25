@@ -29,15 +29,15 @@ SCORING_IOU = 0.25
 Predictions = utils.make_custom_predictions(iou_threshold=SCORING_IOU)
 workflow = ObjectDetector()
 score_types = [
-    utils.ClassAveragePrecision("Primordial", iou_threshold=SCORING_IOU),
-    utils.ClassAveragePrecision("Primary", iou_threshold=SCORING_IOU),
-    utils.ClassAveragePrecision("Secondary", iou_threshold=SCORING_IOU),
-    utils.ClassAveragePrecision("Tertiary", iou_threshold=SCORING_IOU),
     utils.MeanAveragePrecision(
         class_names=["Primordial", "Primary", "Secondary", "Tertiary"],
         weights=[1, 1, 1, 1],
         iou_threshold=SCORING_IOU,
     ),
+    utils.ClassAveragePrecision("Primordial", iou_threshold=SCORING_IOU),
+    utils.ClassAveragePrecision("Primary", iou_threshold=SCORING_IOU),
+    utils.ClassAveragePrecision("Secondary", iou_threshold=SCORING_IOU),
+    utils.ClassAveragePrecision("Tertiary", iou_threshold=SCORING_IOU),
 ]
 
 
@@ -74,11 +74,13 @@ def _get_data(path=".", split="train"):
         shape (N_images,). Each element is a list of locations.
 
     """
-    labels = pd.read_csv(os.path.join(path, "data", split, "labels.csv"))
+    base_data_path = os.path.abspath(os.path.join(path, "data", split))
+    labels_path = os.path.join(base_data_path, "labels.csv")
+    labels = pd.read_csv(labels_path)
     filepaths = []
     locations = []
     for filename, group in labels.groupby("filename"):
-        filepath = os.path.join("data", split, filename)
+        filepath = os.path.join(base_data_path, filename)
         filepaths.append(filepath)
 
         locations_in_image = [
