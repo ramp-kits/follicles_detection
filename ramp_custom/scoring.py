@@ -20,6 +20,7 @@ class ClassAveragePrecision(BaseScoreType):
     is_lower_the_better = False
     minimum = 0.0
     maximum = 1.0
+    worst = 0.0
 
     def __init__(self, class_name, iou_threshold):
         self.name = f"AP {class_name}"
@@ -52,6 +53,7 @@ class MeanAveragePrecision(BaseScoreType):
     is_lower_the_better = False
     minimum = 0.0
     maximum = 1.0
+    worst = 0.0
 
     def __init__(self, class_names, weights, iou_threshold):
         self.name = "mean AP"
