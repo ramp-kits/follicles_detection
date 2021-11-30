@@ -9,6 +9,8 @@ from zlib import adler32
 from pathlib import Path
 from osfclient.api import OSF
 from osfclient.exceptions import UnauthorizedException
+import numpy as np
+from PIL import Image
 
 LOCAL_DATA = Path(__file__).parent / "data"
 
@@ -24,7 +26,7 @@ RAMP_FOLDER_CONFIGURATION = {
         data_checksum=2471299081,
     ),
     "private": dict(
-        code="vw8sh", archive_name="private.tar.gz", data_checksum=4115248977
+        code="vw8sh", archive_name="private.tar.gz", data_checksum=756276259
     ),
 }
 
@@ -137,6 +139,13 @@ def download_from_osf(private, username=None, password=None):
             f"{LOCAL_DATA} directory is not empty. Please empty it or select"
             " another destination for LOCAL_DATA if you wish to proceed"
         )
+
+
+def jpg_to_npy(image):
+    image_name = image.split(".")[0]
+    im = Image.open(image)
+    im = np.array(im)
+    np.save(f"{image_name}.npy", im)
 
 
 if __name__ == "__main__":
