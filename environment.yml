@@ -8,6 +8,9 @@ dependencies:
   - pandas
   - matplotlib
   - jupyter
+  - pytorch
+  - torchvision
+  - opencv
 
   # dev
   - black
@@ -15,11 +18,8 @@ dependencies:
 
   - pip
   - pip:
-    - torch 
-    - torchvision
     - imageio
     - scipy
     - tensorflow==2.6.2
     - osfclient
     - ramp-workflow
-    - opencv-python
