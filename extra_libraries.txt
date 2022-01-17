@@ -1,0 +1,3 @@
+torch #pytorch
+torchvision
+opencv-python #opencv
