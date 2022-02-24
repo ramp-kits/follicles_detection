@@ -12,7 +12,7 @@ dependencies:
   - imageio
   - scipy
   - pytorch
-  - cudatoolkit=11
+  - cudatoolkit=10.2
   - torchvision
 
   # dev
