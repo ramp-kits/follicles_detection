@@ -6,6 +6,7 @@ dependencies:
   - numpy
   - scikit-learn
   - pandas
+  - jupyter
   - matplotlib-base
   - opencv
   - imageio

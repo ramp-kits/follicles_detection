@@ -25,16 +25,23 @@ def preprocess_pip_deps(lines):
         if len(dep) == 0 or dep.startswith("#"):
             continue
 
-        # If there is a comment on the same line
-        # use this to declare compat with conda install
-        deps.append(dep.split("#")[-1].strip())
+        # If there is a comment on the same line use this to declare compat
+        # with conda install name. Note that if two packages are to be
+        # installed in conda, they can be added on the same line separated
+        # with a space.
+        deps.extend(dep.split("#")[-1].strip().split())
     return deps
+
+
+def to_set(deps_list):
+    """Normalize the list as a set, removing version indications"""
+    return set(d.split("=")[0] for d in deps_list)
 
 
 def assert_same_deps(deps_pip, deps_conda):
     "Check the two dependencies are the same with an explicit error message."
-    deps_pip = set(deps_pip)
-    deps_conda = set(deps_conda) - {"pip"}
+    deps_pip = to_set(deps_pip)
+    deps_conda = to_set(deps_conda) - {"pip"}
 
     missing_conda = deps_pip - deps_conda
     missing_pip = deps_conda - deps_pip

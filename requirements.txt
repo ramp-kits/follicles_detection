@@ -5,6 +5,7 @@ osfclient
 # generic datascience
 matplotlib  # matplotlib-base
 numpy
+jupyter
 pandas
 scipy
 imageio
