@@ -10,7 +10,7 @@ pandas
 scipy
 imageio
 
-tensorflow==2.6.3
+tensorflow-gpu
 scikit-learn
 
 # dev
