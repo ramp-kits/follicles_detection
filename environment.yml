@@ -15,6 +15,7 @@ dependencies:
   - pytorch
   - cudatoolkit=10.2
   - torchvision
+  - pycocotools
 
   # dev
   - black
