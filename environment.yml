@@ -8,7 +8,6 @@ dependencies:
   - pandas
   - jupyter
   - matplotlib-base
-  - opencv
   - imageio
   - scipy
   - tensorflow-gpu
@@ -23,5 +22,6 @@ dependencies:
 
   - pip
   - pip:
+    - opencv-python-headless
     - osfclient
     - ramp-workflow

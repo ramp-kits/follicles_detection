@@ -1,4 +1,4 @@
 torch  # pytorch cudatoolkit
 torchvision
-opencv-python # opencv
+opencv-python-headless
 pycocotools
