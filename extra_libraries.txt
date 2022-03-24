@@ -2,3 +2,5 @@ torch  # pytorch cudatoolkit
 torchvision
 opencv-python-headless
 pycocotools
+requests
+pyyaml
